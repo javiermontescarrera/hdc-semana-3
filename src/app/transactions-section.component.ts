@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   MatCard,
@@ -74,9 +74,10 @@ import { ShyftApiService } from './shyft-api.service';
   `,
 })
 export class TransactionsSectionComponent {
+  readonly network = input<string>('mainnet-beta');
+  // private readonly network = 'mainnet-beta';
+
   private readonly _shyftApiService = inject(ShyftApiService);
-  private readonly _network = 'mainnet-beta';
-  // private readonly _network = 'devnet';
   private readonly _walletStore = inject(WalletStore);
   readonly _publicKey = toSignal(this._walletStore.publicKey$);
   readonly displayedColumns = ['type', 'status', 'timestamp'];
@@ -84,7 +85,7 @@ export class TransactionsSectionComponent {
   readonly transactions = computedAsync(() =>
     this._shyftApiService.getTransactions(
       this._publicKey()?.toBase58(),
-      this._network,
+      this.network(),
     ),
   );
 }
