@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatCard } from '@angular/material/card';
@@ -54,26 +54,32 @@ import { TransferModalComponent } from './transfer-modal.component';
         }
 
         @if (selectedToken) {
-          <div class="w-full items-center text-center">
-            <div
-              class="rounded-full flex justify-center items-center gap-2 mb-4"
-            >
-              <img
-                [src]="selectedToken.info.image"
-                class="rounded-full w-14 h-14"
-              />
-              <p class="text-3xl font-bold">{{ selectedToken.info.name }}</p>
-            </div>
-            <p class="text-2xl font-bold mb-4">
-              Saldo: {{ selectedToken.balance }}
-            </p>
+          @if (hasToken()) {
+            <div class="w-full items-center text-center">
+              <div
+                class="rounded-full flex justify-center items-center gap-2 mb-4"
+              >
+                <img
+                  [src]="selectedToken.info.image"
+                  class="rounded-full w-14 h-14"
+                />
+                <p class="text-3xl font-bold">{{ selectedToken.info.name }}</p>
+              </div>
+              <p class="text-2xl font-bold mb-4">
+                Saldo: {{ selectedToken.balance }}
+              </p>
 
-            <footer class="flex justify-center gap-4 mb-4">
-              <button mat-raised-button color="primary" (click)="onTransfer()">
-                Transferir
-              </button>
-            </footer>
-          </div>
+              <footer class="flex justify-center gap-4 mb-4">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="onTransfer()"
+                >
+                  Transferir
+                </button>
+              </footer>
+            </div>
+          }
         }
       </mat-card>
     </section>
@@ -81,11 +87,12 @@ import { TransferModalComponent } from './transfer-modal.component';
 })
 // export class BalanceSectionComponent implements OnInit {
 export class BalanceSectionComponent {
+  readonly network = input<string>('mainnet-beta');
+  // private readonly network = 'mainnet-beta';
+
   private readonly _matDialog = inject(MatDialog);
 
   private readonly _shyftApiService = inject(ShyftApiService);
-  private readonly _network = 'mainnet-beta';
-  // private readonly _network = 'devnet';
   private readonly _walletStore = inject(WalletStore);
   private readonly _publicKey = toSignal(this._walletStore.publicKey$);
 
@@ -108,7 +115,7 @@ export class BalanceSectionComponent {
     () =>
       this._shyftApiService.getAllTokens(
         this._publicKey()?.toBase58(),
-        this._network,
+        this.network(),
       ),
     { requireSync: true },
   );
@@ -119,9 +126,33 @@ export class BalanceSectionComponent {
     this.selectedItem.valueChanges.subscribe((selectedValue) => {
       this.selectedToken = selectedValue;
     });
+
+    console.log(`Balance component network: ${this.network()}`);
   }
 
   onTransfer() {
     this._matDialog.open(TransferModalComponent, { data: this.selectedToken });
+  }
+
+  hasToken() {
+    var hasMatch = false;
+    // console.log(`this.selectedToken?.address: ${this.selectedToken?.address}`);
+    // console.log(`this.allTokens().length: ${this.allTokens().length}`);
+
+    for (var index: number = 0; index < this.allTokens().length; ++index) {
+      var token = this.allTokens()[index];
+      // console.log(`token.address: ${token.address}`);
+
+      if (token.address == this.selectedToken?.address) {
+        hasMatch = true;
+        break;
+      }
+    }
+
+    if (!hasMatch) {
+      this.selectedToken = undefined;
+    }
+
+    return hasMatch;
   }
 }

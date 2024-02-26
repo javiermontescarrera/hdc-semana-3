@@ -36,7 +36,12 @@ export class ShyftApiService {
       .get<{
         result: { balance: number; info: { image: string } };
       }>(url.toString(), { headers: this._header })
-      .pipe(map((response) => response.result));
+      .pipe(
+        tap((response) => {
+          console.log('Account balance:', response.result);
+        }),
+        map((response) => response.result),
+      );
   }
 
   getTransactions(publicKey: string | undefined | null, network: string) {
